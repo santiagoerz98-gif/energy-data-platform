@@ -45,6 +45,7 @@ class Extractor():
             geo_ids=geo_ids)
 
         indicator_name = data["indicator"]['name']
+        indicator_short_name = data["indicator"]["short_name"]
 
         # Obtener la fecha y hora actual para el timestamp del archivo
         extraction_date = datetime.now()
@@ -57,7 +58,14 @@ class Extractor():
         raw_dir.mkdir(parents=True, exist_ok=True)
 
         # Crear el nombre del archivo basado en el indicador, fechas y timestamp
-        filename = self._build_filename(indicator_id=indicator_id,start_date=start_date,end_date=end_date,timestamp=timestamp)
+        filename = self._build_filename(
+            indicator_id=indicator_id,
+            indicator_short_name=indicator_short_name,
+            start_date=start_date,
+            end_date=end_date,
+            timestamp=timestamp
+        )
+
         # Crear la ruta completa del archivo
         filepath = raw_dir / filename
         
@@ -103,11 +111,18 @@ class Extractor():
                 return "all"
             return date_str.replace("-", "").replace(":", "")
 
-    def _build_filename(self,indicator_id:int,start_date:str | None, end_date:str | None,timestamp:str)->str:
+    def _build_filename(
+            self,
+            indicator_id:int,
+            indicator_short_name:str,
+            start_date:str | None, 
+            end_date:str | None,
+            timestamp:str
+        )->str:
         """
             Construye el nombre del archivo JSON de la capa RAW
         """
-        filename =  f"indicator_{indicator_id}_{self._format_date_for_filename(start_date)}_{self._format_date_for_filename(end_date)}_{timestamp}.json"
+        filename =  f"indicator_{indicator_id}_{indicator_short_name.replace(' ','')}_{self._format_date_for_filename(start_date)}_{self._format_date_for_filename(end_date)}_{timestamp}.json"
         return filename
         
          
