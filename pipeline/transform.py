@@ -1,6 +1,7 @@
 from pathlib import Path
 import json
 import logging
+import pandas as pd
 
 logger = logging.getLogger(__name__)
 
@@ -48,3 +49,101 @@ class Transformer:
         logger.info("Raw successfully loaded")
 
         return data
+
+    def normalize(self,data:dict)-> pd.DataFrame:
+        """
+        Convierte la lista 'values' del JSON de ESIOS en un DataFrame,
+        preservando todas las columnas presentes.
+        """
+        values = data["indicator"]["values"]
+        return pd.DataFrame(values)
+
+    def convert_types(self,df:pd.DataFrame)->pd.DataFrame:
+        """
+        Convierte las columnas del DataFrame a los tipos de datos esperados.
+
+        Args:
+            df: DataFrame normalizado.
+
+        Returns:
+            pd.DataFrame: DataFrame con los tipos convertidos.
+        """
+
+        df = df.copy()
+
+        DTYPE_MAPPING = {
+            "value":float,
+            "geo_id":"int64",
+            "geo_name":"string",
+        }
+
+        for column,dtype in DTYPE_MAPPING.items():
+            if column in df.columns:
+                df[column] = df[column].astype(dtype=dtype)
+
+        if "datetime_utc" in df.columns:
+            df["datetime_utc"] = pd.to_datetime(
+                df["datetime_utc"],
+                utc=True
+            )
+
+        return df
+
+    def clean_data(self,df:pd.DataFrame)->pd.DataFrame:
+        """
+        Realiza la limpieza básica de los datos.
+
+        Args:
+            df: DataFrame con los tipos ya convertidos.
+
+        Returns:
+            pd.DataFrame: DataFrame limpio.
+        """
+        df = df.copy()
+
+        # Eliminar columnas que no se utilizaran
+        columns_to_drop =[
+            "datetime",
+            "tz_time"
+        ]
+
+        df = df.drop(
+            columns=columns_to_drop,
+            errors="ignore"
+        )
+
+        # Eliminar las filas completamente vacias
+        df = df.dropna(how="all")
+
+        # Eliminar duplicados exactos
+        df = df.drop_duplicates()
+
+        # Reiniciar el indice
+        df.reset_index(drop=True)
+
+        return df
+
+    def create_derived_columns(self,df:pd.DataFrame)->pd.DataFrame:
+        """
+        Crea columnas derivadas a partir de la fecha y hora UTC.
+
+        Args:
+            df: DataFrame limpio.
+
+        Returns:
+            pd.DataFrame: DataFrame enriquecido.
+        """
+        df =df.copy()
+
+        timestamp = df["datetime_utc"]
+
+        df["year"] = timestamp.dt.year
+        df["month"] = timestamp.dt.month
+        df["day"] = timestamp.dt.day
+        df["hour"] = timestamp.dt.hour
+        df["weekday"] = timestamp.dt.day_name()
+
+        return df
+
+
+    
