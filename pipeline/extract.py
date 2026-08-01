@@ -3,6 +3,7 @@ import json
 from pathlib import Path
 from services.esios_client import EsiosClient
 import logging
+from config.ids_catalog import INDICATORS
 
 logger = logging.getLogger(__name__)
 
@@ -52,7 +53,7 @@ class Extractor():
         timestamp = extraction_date.strftime("%Y%m%d_%H%M%S")
 
         # Crear la ruta del directorio para almacenar los datos extraídos
-        raw_dir = self._build_raw_directory(extraction_date,indicator_name)
+        raw_dir = self._build_raw_directory(extraction_date,indicator_id)
         
         # Asegurarse de que el directorio exista
         raw_dir.mkdir(parents=True, exist_ok=True)
@@ -81,12 +82,13 @@ class Extractor():
             raise
 
         return {
-             "name":indicator_name,
+             "metadata":INDICATORS.get(indicator_id),
              "data":data,
              "filepath":filepath
         }
+    
 
-    def _build_raw_directory(self,extraction_date:datetime,indicator_name:str)-> Path:
+    def _build_raw_directory(self,extraction_date:datetime,indicator_id:int)-> Path:
         """
             Construye el Path al directorio para guardar los datos extraidos
         """
@@ -97,7 +99,7 @@ class Extractor():
             / str(extraction_date.year)
             / f"{extraction_date.month:02d}"
             / f"{extraction_date.day:02d}"
-            / f"{indicator_name}"
+            / f"{INDICATORS.get(indicator_id, {}).get('dataset', 'Unknown')}"
         )
         return raw_dir
 
