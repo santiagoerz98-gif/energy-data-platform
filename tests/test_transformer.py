@@ -3,16 +3,12 @@ from pipeline.transform import Transformer
 
 transformer = Transformer()
 
-filepath = Path("data/raw/esios/2026/07/30/Generación T.Real nuclear/indicator_549_20260701_20260730_20260730_151108.json")
+folder = Path(r"data\raw\esios\2026\08\01\demand")
 
-data = transformer.read_raw(filepath=filepath)
+demand_df = transformer.build_demand_dataset(folder=folder)
 
-normalize_data = transformer.normalize(data)
 
-normalize_data = transformer.convert_types(normalize_data)
-
-clean_data = transformer.clean_data(normalize_data)
-
-enriched_data = transformer.create_derived_columns(clean_data)
-
-print(enriched_data.head())
+print(demand_df.describe())
+print(demand_df.info())  
+print(demand_df.head())
+print(demand_df.tail())
