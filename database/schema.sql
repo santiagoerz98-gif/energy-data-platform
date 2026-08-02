@@ -4,29 +4,9 @@
 -- PostgreSQL
 -- =====================================================
 
-CREATE TABLE dim_time (
+CREATE SCHEMA IF NOT EXISTS dw;
 
-    time_key INTEGER GENERATED ALWAYS AS IDENTITY PRIMARY KEY,
-
-    datetime_utc TIMESTAMP NOT NULL,
-
-    time_date DATE NOT NULL,
-
-    time_hour SMALLINT NOT NULL,
-
-    time_day SMALLINT NOT NULL,
-
-    time_month SMALLINT NOT NULL,
-
-    time_quarter SMALLINT NOT NULL,
-
-    time_year SMALLINT NOT NULL,
-
-    time_weekday VARCHAR(15) NOT NULL
-
-);
-
-CREATE TABLE dim_geography (
+CREATE TABLE dw.dim_geography (
 
     geography_key INTEGER GENERATED ALWAYS AS IDENTITY PRIMARY KEY,
 
@@ -36,7 +16,7 @@ CREATE TABLE dim_geography (
 
 );
 
-CREATE TABLE dim_energy_source (
+CREATE TABLE dw.dim_energy_source (
 
     energy_source_key INTEGER GENERATED ALWAYS AS IDENTITY PRIMARY KEY,
 
@@ -46,7 +26,7 @@ CREATE TABLE dim_energy_source (
 
 );
 
-CREATE TABLE fact_generation (
+CREATE TABLE dw.fact_generation (
 
     generation_key BIGINT GENERATED ALWAYS AS IDENTITY PRIMARY KEY,
 
@@ -72,7 +52,7 @@ CREATE TABLE fact_generation (
 
 );
 
-CREATE TABLE fact_demand (
+CREATE TABLE dw.fact_demand (
 
     demand_key BIGINT GENERATED ALWAYS AS IDENTITY PRIMARY KEY,
 
@@ -81,6 +61,8 @@ CREATE TABLE fact_demand (
     geography_key INTEGER NOT NULL,
 
     demand_mwh NUMERIC(12,3) NOT NULL CHECK (demand_mwh >= 0),
+
+    measurement_type VARCHAR(50) NOT NULL,
 
     CONSTRAINT fk_demand_time
         FOREIGN KEY(time_key)
