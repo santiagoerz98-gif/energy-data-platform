@@ -102,7 +102,7 @@ class Transformer:
             pd.DataFrame: DataFrame limpio.
         """
         df = df.copy()
-        filas_iniciales = len(df)
+        filas_iniciales = int(len(df))
 
         # Eliminar columnas que no se utilizaran
         columns_to_drop =[
@@ -116,21 +116,21 @@ class Transformer:
         )
 
         # Eliminar las filas completamente vacias
-        filas_vacias = df.isnull().all(axis=1).sum()
+        filas_vacias = int(df.isnull().all(axis=1).sum())
         df = df.dropna(how="all")
 
         # Limpieza de valores nulos y negativos en la columna "value"
-        nulos_en_value = df["value"].isnull().sum()
+        nulos_en_value = int(df["value"].isnull().sum())
         df = df.dropna(subset=["value"])
-        negativos_en_value = (df["value"] < 0).sum()
+        negativos_en_value = int((df["value"] < 0).sum())
         df = df[df["value"] >= 0]
 
         # Eliminar duplicados exactos
-        duplicados_eliminados = df.duplicated().sum()
+        duplicados_eliminados = int(df.duplicated().sum()) 
         df = df.drop_duplicates()
 
         # Retencion
-        retencion = len(df) / filas_iniciales * 100
+        retencion = int((len(df) / filas_iniciales) * 100)
 
         # Reiniciar el indice
         df.reset_index(drop=True)
