@@ -102,6 +102,7 @@ class Transformer:
             pd.DataFrame: DataFrame limpio.
         """
         df = df.copy()
+        filas_iniciales = len(df)
 
         # Eliminar columnas que no se utilizaran
         columns_to_drop =[
@@ -115,15 +116,36 @@ class Transformer:
         )
 
         # Eliminar las filas completamente vacias
+        filas_vacias = df.isnull().all(axis=1).sum()
         df = df.dropna(how="all")
 
+        # Limpieza de valores nulos y negativos en la columna "value"
+        nulos_en_value = df["value"].isnull().sum()
+        df = df.dropna(subset=["value"])
+        negativos_en_value = (df["value"] < 0).sum()
+        df = df[df["value"] >= 0]
+
         # Eliminar duplicados exactos
+        duplicados_eliminados = df.duplicated().sum()
         df = df.drop_duplicates()
+
+        # Retencion
+        retencion = len(df) / filas_iniciales * 100
 
         # Reiniciar el indice
         df.reset_index(drop=True)
 
-        return df
+        metricas_limpieza = {
+            "filas_iniciales": filas_iniciales,
+            "filas_vacias_eliminadas": filas_vacias,
+            "nulos_en_value_eliminados": nulos_en_value,
+            "negativos_en_value_eliminados": negativos_en_value,
+            "duplicados_eliminados": duplicados_eliminados,
+            "filas_finales": len(df),
+            "retencion": retencion
+        }
+
+        return {"df": df, "metricas_limpieza": metricas_limpieza}
 
     def create_derived_columns(self,df:pd.DataFrame)->pd.DataFrame:
         """
@@ -167,7 +189,8 @@ class Transformer:
         # Normaliza, convierte tipos y limpia los datos
         df = self.normalize(data)
         df = self.convert_types(df)
-        df = self.clean_data(df)
+        df = self.clean_data(df)["df"]
+        metricas_limpieza = self.clean_data(df)["metricas_limpieza"]
 
         # Crea columna "measurment_type" basada en el metadata del indicador
         df["measurement_type"] = metadata.get("measurement_type")
@@ -177,6 +200,7 @@ class Transformer:
 
         return {
             "df": df,
-            "metadata": metadata
+            "metadata": metadata,
+            "metricas_limpieza": metricas_limpieza
         }
     
