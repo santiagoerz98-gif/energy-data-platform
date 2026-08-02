@@ -1,8 +1,9 @@
+from dotenv import load_dotenv
 from sqlalchemy import create_engine
+import os
 
-DATABASE_URL = (
-    "postgresql+psycopg://energy_user:"
-    "energy_password@localhost:5432/energy_dw"
-)
+load_dotenv()
+
+DATABASE_URL = os.getenv("DATABASE_URL")
 
 engine = create_engine(DATABASE_URL)
