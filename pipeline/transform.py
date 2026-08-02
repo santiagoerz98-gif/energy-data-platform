@@ -168,90 +168,15 @@ class Transformer:
         df = self.normalize(data)
         df = self.convert_types(df)
         df = self.clean_data(df)
-        
+
+        # Crea columna "measurment_type" basada en el metadata del indicador
+        df["measurement_type"] = metadata.get("measurement_type")
+
+        # Crea columna "short_name" basada en el metadata del indicador
+        df["short_name"] = metadata.get("short_name")
 
         return {
             "df": df,
             "metadata": metadata
         }
-
-    def build_demand_dataframe(self,filepath:Path)->pd.DataFrame:
-        """
-        Construye un DataFrame específico para la demanda a partir de un archivo JSON de la capa Raw.
-
-        Args:
-            filepath: Ruta del archivo JSON.
-
-        Returns:
-            pd.DataFrame: DataFrame final listo para el Data Warehouse.
-        """
-        df = self.build_dataframe(filepath)["df"]
-        metadata = self.build_dataframe(filepath)["metadata"]
-
-        # Crea columna "measurment_type" basada en el metadata del indicador
-        df["measurement_type"] = metadata.get("measurement_type")
-
-        
-        return df
-
-    def build_generation_dataframe(self,filepath:Path)->pd.DataFrame:
-        """
-        Construye un DataFrame específico para la generación a partir de un archivo JSON de la capa Raw.
-
-        Args:
-            filepath: Ruta del archivo JSON.
-
-        Returns:
-            pd.DataFrame: DataFrame final listo para el Data Warehouse.
-        """
-        df = self.build_dataframe(filepath)["df"]
-        metadata = self.build_dataframe(filepath)["metadata"]
-
-        # Crea columna "energy_source" basada en el metadata del indicador
-        df["energy_source"] = metadata.get("short_name")
-
-        
-        return df
-    
-    def build_demand_dataset(self,folder:Path)->pd.DataFrame:
-        """
-        Crea el dataset "demand" final a partir de los archivos JSON en una carpeta.
-
-        Args:
-            folder: Ruta de la carpeta con los archivos JSON.
-
-        Returns:
-            pd.DataFrame: DataFrame resultante de la concatenación.
-        """
-
-        df_list = []
-
-        # Itera sobre todos los archivos JSON en la carpeta y construye un DataFrame para cada uno
-        for file in folder.iterdir():
-            if file.suffix == ".json":
-                df = self.build_demand_dataframe(file)
-                df_list.append(df)
-
-        return pd.concat(df_list,ignore_index=True)
-
-    def build_generation_dataset(self,folder:Path)->pd.DataFrame:
-        """
-        Crea el dataset "generation" final a partir de los archivos JSON en una carpeta.
-
-        Args:
-            folder: Ruta de la carpeta con los archivos JSON.
-
-        Returns:
-            pd.DataFrame: DataFrame resultante de la concatenación.
-        """
-
-        df_list = []
-
-        # Itera sobre todos los archivos JSON en la carpeta y construye un DataFrame para cada uno
-        for file in folder.iterdir():
-            if file.suffix == ".json":
-                df = self.build_generation_dataframe(file)
-                df_list.append(df)
-
-        return pd.concat(df_list,ignore_index=True)
     
