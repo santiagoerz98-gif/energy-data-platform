@@ -133,7 +133,7 @@ class Transformer:
         retencion = int((len(df) / filas_iniciales) * 100)
 
         # Reiniciar el indice
-        df.reset_index(drop=True)
+        df.reset_index(drop=True, inplace=True)
 
         metricas_limpieza = {
             "filas_iniciales": filas_iniciales,
@@ -189,17 +189,18 @@ class Transformer:
         # Normaliza, convierte tipos y limpia los datos
         df = self.normalize(data)
         df = self.convert_types(df)
-        df = self.clean_data(df)["df"]
-        metricas_limpieza = self.clean_data(df)["metricas_limpieza"]
+        clean_result = self.clean_data(df)
+        df_cleaned = clean_result["df"]
+        metricas_limpieza = clean_result["metricas_limpieza"]
 
         # Crea columna "measurment_type" basada en el metadata del indicador
-        df["measurement_type"] = metadata.get("measurement_type")
+        df_cleaned["measurement_type"] = metadata.get("measurement_type")
 
         # Crea columna "short_name" basada en el metadata del indicador
-        df["short_name"] = metadata.get("short_name")
+        df_cleaned["short_name"] = metadata.get("short_name")
 
         return {
-            "df": df,
+            "df": df_cleaned,
             "metadata": metadata,
             "metricas_limpieza": metricas_limpieza
         }
