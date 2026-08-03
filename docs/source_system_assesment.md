@@ -134,6 +134,11 @@ Porcentaje renovable.
 
 Producción total.
 
+Estado actual:
+
+- El pipeline soporta generacion en catalogo y estructura de carga.
+- La operacion inicial prioriza demanda y habilita generacion progresivamente.
+
 ---
 
 ## Precio del mercado
@@ -141,6 +146,10 @@ Producción total.
 Uso:
 
 Indicador económico.
+
+Estado actual:
+
+- Planificado, no integrado en el catalogo activo del pipeline.
 
 ---
 
@@ -185,7 +194,11 @@ La frecuencia depende del indicador.
 
 Para el MVP se realizará:
 
-Una extracción diaria.
+Extraccion manual por ejecucion CLI del pipeline.
+
+Objetivo operativo recomendado:
+
+- al menos una extraccion diaria por indicador prioritario.
 
 En futuras versiones podrá ejecutarse:
 
@@ -216,7 +229,15 @@ Transformación
 
 ↓
 
-PostgreSQL
+Validacion de calidad
+
+↓
+
+Carga a staging
+
+↓
+
+PostgreSQL DW
 ```
 
 ### Justificación
@@ -240,19 +261,9 @@ Contendrá el JSON exactamente como fue recibido.
 
 No se modificarán los datos.
 
-Ejemplo.
+Ruta real de referencia:
 
-```
-data/raw/
-
-2026/
-
-07/
-
-generation/
-
-generation_20260727_120000.json
-```
+`data/raw/esios/YYYY/MM/DD/<nombre_indicador_o_dataset>/archivo.json`
 
 ---
 
@@ -266,6 +277,10 @@ Se eliminarán:
 - registros inválidos;
 - duplicados.
 
+Adicionalmente se generan reportes de calidad en:
+
+`data/raw/processed/reports/`
+
 ---
 
 ## Data Warehouse
@@ -275,6 +290,11 @@ PostgreSQL almacenará:
 - dimensiones;
 - tablas de hechos;
 - métricas.
+
+Separacion por capas:
+
+- `staging`: aterrizaje operativo de carga.
+- `dw`: capa analitica final.
 
 ---
 
@@ -426,7 +446,7 @@ El sistema deberá ser capaz de:
 - transformar la información;
 - validar la calidad;
 - cargar PostgreSQL;
-- exponer los datos mediante FastAPI.
+- preparar datos para exposicion via API/dashboard en fases posteriores.
 
 ---
 
@@ -475,19 +495,24 @@ El funcionamiento del pipeline depende de:
 
 # 16. Decisiones arquitectónicas
 
-| Decisión                | Justificación                                |
-| ----------------------- | -------------------------------------------- |
-| Guardar JSON original   | Permite auditoría y reprocesamiento          |
-| Utilizar PostgreSQL     | Suficiente para el volumen del MVP           |
-| Transformar con Pandas  | Simplicidad y amplia adopción                |
-| Separar API y Dashboard | Desacoplamiento entre consumo y presentación |
-| Modelo dimensional      | Facilita consultas analíticas                |
+| Decisión                | Justificación                                          |
+| ----------------------- | ------------------------------------------------------ |
+| Guardar JSON original   | Permite auditoría y reprocesamiento                    |
+| Utilizar PostgreSQL     | Suficiente para el volumen del MVP                     |
+| Transformar con Pandas  | Simplicidad y amplia adopción                          |
+| Separar API y Dashboard | Desacoplamiento entre consumo y presentacion (roadmap) |
+| Modelo dimensional      | Facilita consultas analíticas                          |
 
 ---
 
 # 17. Evolución prevista
 
 Una vez finalizado el MVP, la arquitectura evolucionará incorporando:
+
+## Consumo de datos
+
+- API REST en `api/`
+- Dashboard en `app/`
 
 ## Infraestructura
 

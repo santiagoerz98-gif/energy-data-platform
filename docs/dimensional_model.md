@@ -189,6 +189,12 @@ Contendrá las mediciones de demanda eléctrica.
 
 - Demanda eléctrica (MWh)
 
+### Atributo operativo adicional
+
+- `measurement_type`: clasifica la medicion en `Real`, `Forecast` o `Scheduled`.
+
+Este atributo facilita comparar demanda observada frente a demanda prevista o programada sin perder granularidad temporal.
+
 ### Relaciones
 
 - Dimensión Tiempo
@@ -247,5 +253,11 @@ Una vez identificadas las entidades del dominio se procederá a:
 3. Especificar las relaciones entre tablas.
 4. Crear el diagrama entidad-relación.
 5. Implementar el esquema físico en PostgreSQL.
+
+---
+
+# 10. Nota de alineacion con el modelo fisico
+
+El modelo fisico actual en `database/schema.sql` incorpora `measurement_type` en `fact_demand`, por lo que este documento conceptual se actualiza para mantener consistencia entre diseño y operacion.
 
 ---

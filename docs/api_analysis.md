@@ -1,4 +1,5 @@
 # API Analysis
+
 ## Proyecto: Energy Data Platform
 
 **Versión:** 1.0
@@ -131,58 +132,34 @@ Permite obtener los datos correspondientes a un indicador para un intervalo temp
 
 # 6. Indicadores seleccionados
 
-Para el MVP únicamente se utilizarán cuatro indicadores.
+El catalogo tecnico del proyecto ya contempla indicadores de demanda y generacion en `config/ids_catalog.py`.
 
-## 1. Demanda eléctrica
+Para la operacion inicial del MVP se prioriza demanda, manteniendo generacion disponible para ejecuciones progresivas por lotes.
 
-Objetivo
+## Estado actual por dominio
 
-Representar el consumo eléctrico del sistema español.
+| Dominio        | Estado                                    | Detalle                                        |
+| -------------- | ----------------------------------------- | ---------------------------------------------- |
+| Demanda        | Implementado y operativo                  | Multiples IDs activos en catalogo              |
+| Generacion     | Implementado a nivel de catalogo/pipeline | Activacion gradual por indicador               |
+| Precio mercado | Planificado                               | No integrado en catalogo actual                |
+| Mix energetico | Derivable                                 | Se obtiene agregando indicadores de generacion |
 
-Uso
+## Indicadores de demanda actualmente catalogados
 
-- KPI principal
-- gráfico histórico
-- comparación diaria
+- 1293: Demanda real
+- 1740: Demanda Real SNP
+- 2037: Demanda real nacional
+- 544: Demanda prevista
+- 2052: Demanda real prevista nacional
+- 545: Demanda programada
+- 2053: Demanda real programada nacional
 
----
+## Indicadores de generacion (catalogo disponible)
 
-## 2. Generación por tecnología
+El archivo `config/ids_catalog.py` incluye un conjunto amplio de indicadores de generacion (reales, programados y previstos), entre ellos los IDs base 546-555 y otros asociados por tecnologia.
 
-Objetivo
-
-Conocer cuánta energía produce cada tecnología.
-
-Uso
-
-- dashboard
-- gráficos
-- cálculo del mix energético
-
----
-
-## 3. Precio del mercado eléctrico
-
-Objetivo
-
-Mostrar la evolución del precio de la electricidad.
-
-Uso
-
-- indicador económico
-
----
-
-## 4. Mix energético
-
-Objetivo
-
-Visualizar el porcentaje de producción por tecnología.
-
-Uso
-
-- gráfico circular
-- porcentaje renovable
+Se recomienda consultar siempre ese archivo como fuente de verdad operativa antes de planificar nuevas extracciones.
 
 ---
 
@@ -190,13 +167,13 @@ Uso
 
 Los principales parámetros que utilizará el proyecto son:
 
-| Parámetro | Descripción |
-|------------|-------------|
-| start_date | Fecha inicial |
-| end_date | Fecha final |
+| Parámetro  | Descripción                  |
+| ---------- | ---------------------------- |
+| start_date | Fecha inicial                |
+| end_date   | Fecha final                  |
 | time_trunc | Nivel de agregación temporal |
-| geo_ids | Área geográfica |
-| geo_trunc | Nivel geográfico |
+| geo_ids    | Área geográfica              |
+| geo_trunc  | Nivel geográfico             |
 
 ---
 
@@ -208,17 +185,17 @@ De manera simplificada contienen:
 
 ```json
 {
-    "indicator": {
-        "id": 1001,
-        "name": "Demanda eléctrica"
-    },
-    "values": [
-        {
-            "datetime": "...",
-            "value": 25340,
-            "geo_id": 8741
-        }
-    ]
+  "indicator": {
+    "id": 1001,
+    "name": "Demanda eléctrica"
+  },
+  "values": [
+    {
+      "datetime": "...",
+      "value": 25340,
+      "geo_id": 8741
+    }
+  ]
 }
 ```
 
@@ -232,15 +209,15 @@ ya que contiene la serie temporal.
 
 # 9. Diccionario preliminar de datos
 
-| Campo | Tipo | Descripción | Destino |
-|---------|------|-------------|----------|
-| indicator_id | INTEGER | Identificador del indicador | metadata |
-| indicator_name | VARCHAR | Nombre del indicador | metadata |
-| datetime_utc | TIMESTAMP | Fecha de la medición | dim_time |
-| value | FLOAT | Valor medido | fact_generation / fact_demand |
-| geo_id | INTEGER | Identificador geográfico | dim_geo |
-| geo_name | VARCHAR | Nombre del área | dim_geo |
-| unit | VARCHAR | Unidad de medida | metadata |
+| Campo          | Tipo      | Descripción                 | Destino                       |
+| -------------- | --------- | --------------------------- | ----------------------------- |
+| indicator_id   | INTEGER   | Identificador del indicador | metadata                      |
+| indicator_name | VARCHAR   | Nombre del indicador        | metadata                      |
+| datetime_utc   | TIMESTAMP | Fecha de la medición        | dim_time                      |
+| value          | FLOAT     | Valor medido                | fact_generation / fact_demand |
+| geo_id         | INTEGER   | Identificador geográfico    | dim_geo                       |
+| geo_name       | VARCHAR   | Nombre del área             | dim_geo                       |
+| unit           | VARCHAR   | Unidad de medida            | metadata                      |
 
 ---
 
@@ -336,9 +313,12 @@ Para el MVP se ha decidido:
 
 ✓ utilizar PostgreSQL como Data Warehouse
 
-✓ exponer la información mediante FastAPI
+✓ preparar la salida para consumo por API o dashboard en fases posteriores
 
-✓ desarrollar una aplicación en Streamlit
+Nota de estado:
+
+- `api/` existe como carpeta de roadmap, sin implementacion funcional.
+- `app/` existe como carpeta de roadmap, sin implementacion funcional.
 
 ---
 
@@ -432,6 +412,8 @@ Finalizado este análisis se desarrollarán los siguientes módulos:
 
 5. Carga
 
-6. API REST
+6. Consolidacion de carga analitica en `dw`
 
-7. Dashboard
+7. API REST (fase posterior)
+
+8. Dashboard (fase posterior)

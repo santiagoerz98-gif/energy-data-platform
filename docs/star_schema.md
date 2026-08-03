@@ -72,17 +72,20 @@ Permite realizar análisis temporales sin necesidad de calcular atributos deriva
 
 ### Atributos
 
-| Campo        | Tipo        | Descripción              |
-| ------------ | ----------- | ------------------------ |
-| time_key     | SERIAL      | Clave primaria sustituta |
-| datetime_utc | TIMESTAMP   | Fecha y hora UTC         |
-| date         | DATE        | Fecha                    |
-| hour         | SMALLINT    | Hora                     |
-| day          | SMALLINT    | Día del mes              |
-| month        | SMALLINT    | Mes                      |
-| quarter      | SMALLINT    | Trimestre                |
-| year         | SMALLINT    | Año                      |
-| weekday      | VARCHAR(15) | Día de la semana         |
+| Campo       | Tipo        | Descripción                                        |
+| ----------- | ----------- | -------------------------------------------------- |
+| time_key    | INT         | Clave primaria con formato YYYYMMDD (ej: 20260803) |
+| date_actual | DATE        | Fecha calendario                                   |
+| year        | INT         | Año                                                |
+| quarter     | INT         | Trimestre                                          |
+| month       | INT         | Mes numerico (1-12)                                |
+| month_name  | VARCHAR(20) | Nombre del mes                                     |
+| day         | INT         | Dia del mes                                        |
+| day_of_week | INT         | Dia ISO de la semana (1-7)                         |
+| day_name    | VARCHAR(20) | Nombre del dia                                     |
+| is_weekend  | BOOLEAN     | Verdadero si la fecha cae en fin de semana         |
+
+Nota: la definicion fisica y su carga inicial estan en `database/create_dim_time.sql`.
 
 ---
 
@@ -162,12 +165,13 @@ Almacena la demanda eléctrica registrada para una ubicación geográfica y un i
 
 ### Campos
 
-| Campo         | Tipo          | Descripción             |
-| ------------- | ------------- | ----------------------- |
-| demand_key    | BIGSERIAL     | Clave primaria          |
-| time_key      | INTEGER       | FK → dim_time           |
-| geography_key | INTEGER       | FK → dim_geography      |
-| demand_mwh    | NUMERIC(12,3) | Demanda eléctrica (MWh) |
+| Campo            | Tipo          | Descripción                                  |
+| ---------------- | ------------- | -------------------------------------------- |
+| demand_key       | BIGSERIAL     | Clave primaria                               |
+| time_key         | INTEGER       | FK → dim_time                                |
+| geography_key    | INTEGER       | FK → dim_geography                           |
+| demand_mwh       | NUMERIC(12,3) | Demanda eléctrica (MWh)                      |
+| measurement_type | VARCHAR(50)   | Tipo de medicion (Real, Forecast, Scheduled) |
 
 ---
 
@@ -200,14 +204,15 @@ Almacena la demanda eléctrica registrada para una ubicación geográfica y un i
                         dim_time
                     ┌───────────────┐
                     │   time_key PK │
-                    │ datetime_utc  │
-                    │ date          │
-                    │ hour          │
+                    │ date_actual   │
                     │ day           │
                     │ month         │
                     │ quarter       │
                     │ year          │
-                    │ weekday       │
+                    │ month_name    │
+                    │ day_of_week   │
+                    │ day_name      │
+                    │ is_weekend    │
                     └───────┬───────┘
                             │
                             │
@@ -288,6 +293,15 @@ Todas las dimensiones utilizan claves sustitutas (`SERIAL`) para desacoplar el m
 ## Dimensión Tiempo compartida
 
 La dimensión tiempo será utilizada por todas las tablas de hechos, permitiendo realizar análisis temporales consistentes.
+
+---
+
+## Alineacion con implementacion
+
+Este documento refleja el esquema actual definido en:
+
+- `database/schema.sql`
+- `database/create_dim_time.sql`
 
 ---
 
