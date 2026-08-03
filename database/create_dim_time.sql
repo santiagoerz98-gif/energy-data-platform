@@ -3,7 +3,7 @@ CREATE SCHEMA IF NOT EXISTS dw;
 
 -- Crear la tabla dim_time
 CREATE TABLE IF NOT EXISTS dw.dim_time (
-    date_key INT PRIMARY KEY,         -- Formato YYYYMMDD (Ej: 20260601)
+    time_key INT PRIMARY KEY,         -- Formato YYYYMMDD (Ej: 20260601)
     date_actual DATE NOT NULL,        -- Fecha real (Ej: 2026-06-01)
     year INT NOT NULL,                -- Año (Ej: 2026)
     quarter INT NOT NULL,             -- Trimestre (1 a 4)
@@ -15,10 +15,10 @@ CREATE TABLE IF NOT EXISTS dw.dim_time (
     is_weekend BOOLEAN NOT NULL       -- Si es fin de semana (True/False)
 );
 
-COMMENT ON TABLE dw.dim_time IS 'Tabla de dimensiones de tiempo para análisis temporal. Contiene información detallada sobre cada fecha.'
+COMMENT ON TABLE dw.dim_time IS 'Tabla de dimensiones de tiempo para análisis temporal. Contiene información detallada sobre cada fecha.';
 
 INSERT INTO dw.dim_time (
-    date_key, 
+    time_key, 
     date_actual, 
     year, 
     quarter, 
@@ -30,7 +30,7 @@ INSERT INTO dw.dim_time (
     is_weekend
 )
 SELECT 
-    TO_CHAR(d, 'YYYYMMDD')::INT AS date_key,
+    TO_CHAR(d, 'YYYYMMDD')::INT AS time_key,
     d::DATE AS date_actual,
     EXTRACT(YEAR FROM d)::INT AS year,
     EXTRACT(QUARTER FROM d)::INT AS quarter,
@@ -45,6 +45,6 @@ SELECT
     END AS is_weekend
 FROM 
     generate_series('2026-01-01'::DATE, '2030-12-31'::DATE, INTERVAL '1 day') t(d)
-ON CONFLICT (date_key) DO NOTHING; -- Evita duplicados si corres el script varias veces
+ON CONFLICT (time_key) DO NOTHING; -- Evita duplicados si corres el script varias veces
 
-SELECT * FROM dw.dim_time ORDER BY date_key LIMIT 10; -- Verificar los primeros registros insertados
+SELECT * FROM dw.dim_time ORDER BY time_key LIMIT 10; -- Verificar los primeros registros insertados

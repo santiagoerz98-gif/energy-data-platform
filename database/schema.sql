@@ -6,6 +6,8 @@
 
 CREATE SCHEMA IF NOT EXISTS dw;
 
+CREATE SCHEMA IF NOT EXISTS staging;
+
 CREATE TABLE dw.dim_geography (
 
     geography_key INTEGER GENERATED ALWAYS AS IDENTITY PRIMARY KEY,
@@ -40,15 +42,15 @@ CREATE TABLE dw.fact_generation (
 
     CONSTRAINT fk_generation_time
         FOREIGN KEY(time_key)
-        REFERENCES dim_time(time_key),
+        REFERENCES dw.dim_time(time_key),
 
     CONSTRAINT fk_generation_geography
         FOREIGN KEY(geography_key)
-        REFERENCES dim_geography(geography_key),
+        REFERENCES dw.dim_geography(geography_key),
 
     CONSTRAINT fk_generation_energy
         FOREIGN KEY(energy_source_key)
-        REFERENCES dim_energy_source(energy_source_key)
+        REFERENCES dw.dim_energy_source(energy_source_key)
 
 );
 
@@ -66,25 +68,25 @@ CREATE TABLE dw.fact_demand (
 
     CONSTRAINT fk_demand_time
         FOREIGN KEY(time_key)
-        REFERENCES dim_time(time_key),
+        REFERENCES dw.dim_time(time_key),
 
     CONSTRAINT fk_demand_geography
         FOREIGN KEY(geography_key)
-        REFERENCES dim_geography(geography_key)
+        REFERENCES dw.dim_geography(geography_key)
 
 );
 
 CREATE INDEX idx_fact_generation_time
-ON fact_generation(time_key);
+ON dw.fact_generation(time_key);
 
 CREATE INDEX idx_fact_generation_geography
-ON fact_generation(geography_key);
+ON dw.fact_generation(geography_key);
 
 CREATE INDEX idx_fact_generation_energy
-ON fact_generation(energy_source_key);
+ON dw.fact_generation(energy_source_key);
 
 CREATE INDEX idx_fact_demand_time
-ON fact_demand(time_key);
+ON dw.fact_demand(time_key);
 
 CREATE INDEX idx_fact_demand_geography
-ON fact_demand(geography_key);
+ON dw.fact_demand(geography_key);

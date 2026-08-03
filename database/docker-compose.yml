@@ -20,6 +20,7 @@ services:
 
     volumes:
       - postgres_data:/var/lib/postgresql/data
+      - ./create_dim_time.sql:/docker-entrypoint-initdb.d/1_create_dim_time.sql
       - ./schema.sql:/docker-entrypoint-initdb.d/schema.sql
 
 volumes:
