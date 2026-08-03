@@ -193,6 +193,9 @@ class Transformer:
         df_cleaned = clean_result["df"]
         metricas_limpieza = clean_result["metricas_limpieza"]
 
+        
+        df_cleaned["indicator_id"] = indicator_id # necesario para deduplicar en staging compartido
+
         # Crea columna "measurment_type" basada en el metadata del indicador
         df_cleaned["measurement_type"] = metadata.get("measurement_type")
 
