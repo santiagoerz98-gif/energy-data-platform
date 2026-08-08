@@ -180,18 +180,20 @@ END $$;
 
 -- 3.1 fact_demand
 WITH demand_src AS (
-    SELECT DISTINCT ON (t.time_key, g.geography_key, s.measurement_type)
+    SELECT DISTINCT ON (t.time_key, g.geography_key, s.measurement_type, s.indicator_id)
         t.time_key,
         g.geography_key,
         s.value::numeric(12,3) AS demand_mwh,
-        s.measurement_type
+        s.measurement_type,
+        s.indicator_id
     FROM staging.demand s
     JOIN dw.dim_time t
-        ON s.datetime_utc::date = t.date_actual
+      ON date_trunc('hour', s.datetime_utc::timestamp) = t.datetime_utc
     JOIN dw.dim_geography g
-        ON s.geo_id = g.geo_id
+      ON s.geo_id = g.geo_id
     WHERE s.value >= 0
-    ORDER BY t.time_key, g.geography_key, s.measurement_type, s.datetime_utc DESC
+    ORDER BY
+      t.time_key, g.geography_key, s.measurement_type, s.indicator_id, s.datetime_utc DESC
 ),
 deleted AS (
     DELETE FROM dw.fact_demand f
@@ -199,37 +201,42 @@ deleted AS (
     WHERE f.time_key = d.time_key
       AND f.geography_key = d.geography_key
       AND f.measurement_type = d.measurement_type
+      AND f.indicator_id = d.indicator_id
     RETURNING f.demand_key
 )
 INSERT INTO dw.fact_demand (
     time_key,
     geography_key,
     demand_mwh,
-    measurement_type
+    measurement_type,
+    indicator_id
 )
 SELECT
     d.time_key,
     d.geography_key,
     d.demand_mwh,
-    d.measurement_type
+    d.measurement_type,
+    d.indicator_id
 FROM demand_src d;
 
 -- 3.2 fact_generation
 WITH generation_src AS (
-    SELECT DISTINCT ON (t.time_key, g.geography_key, e.energy_source_key)
+    SELECT DISTINCT ON (t.time_key, g.geography_key, e.energy_source_key, s.indicator_id)
         t.time_key,
         g.geography_key,
         e.energy_source_key,
-        s.value::numeric(12,3) AS generation_mwh
+        s.value::numeric(12,3) AS generation_mwh,
+        s.indicator_id
     FROM staging.generation s
     JOIN dw.dim_time t
-        ON s.datetime_utc::date = t.date_actual
+      ON date_trunc('hour', s.datetime_utc::timestamp) = t.datetime_utc
     JOIN dw.dim_geography g
-        ON s.geo_id = g.geo_id
+      ON s.geo_id = g.geo_id
     JOIN dw.dim_energy_source e
-        ON s.short_name = e.technology_name
+      ON s.short_name = e.technology_name
     WHERE s.value >= 0
-    ORDER BY t.time_key, g.geography_key, e.energy_source_key, s.datetime_utc DESC
+    ORDER BY
+      t.time_key, g.geography_key, e.energy_source_key, s.indicator_id, s.datetime_utc DESC
 ),
 deleted AS (
     DELETE FROM dw.fact_generation f
@@ -237,19 +244,22 @@ deleted AS (
     WHERE f.time_key = gsrc.time_key
       AND f.geography_key = gsrc.geography_key
       AND f.energy_source_key = gsrc.energy_source_key
+      AND f.indicator_id = gsrc.indicator_id
     RETURNING f.generation_key
 )
 INSERT INTO dw.fact_generation (
     time_key,
     geography_key,
     energy_source_key,
-    generation_mwh
+    generation_mwh,
+    indicator_id
 )
 SELECT
     gsrc.time_key,
     gsrc.geography_key,
     gsrc.energy_source_key,
-    gsrc.generation_mwh
+    gsrc.generation_mwh,
+    gsrc.indicator_id
 FROM generation_src gsrc;
 
 -- -----------------------------------------------------
@@ -265,9 +275,9 @@ BEGIN
     -- Duplicados por clave natural
     SELECT COUNT(*) INTO v_dup_demand
     FROM (
-        SELECT time_key, geography_key, measurement_type, COUNT(*)
+        SELECT time_key, geography_key, measurement_type, indicator_id, COUNT(*)
         FROM dw.fact_demand
-        GROUP BY 1,2,3
+        GROUP BY 1,2,3,4
         HAVING COUNT(*) > 1
     ) x;
 

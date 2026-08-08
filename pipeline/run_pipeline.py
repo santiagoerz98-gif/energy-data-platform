@@ -8,7 +8,7 @@ from config.logging_config import setup_logging
 from pipeline.errors import (
     ExtractStageError,
     TransformStageError,
-    QualityStageError,
+    QualityCheckError,
     LoadStageError,
     PipelineError,
 )
@@ -96,7 +96,7 @@ def run_pipeline(indicator_id, start_date=None, end_date=None, time_trunc=None, 
         )
     except Exception as e:
         _log_event("error", "stage.failed", run_id=run_id, stage="quality", error=str(e))
-        raise QualityStageError(f"quality failed for indicator {indicator_id}") from e
+        raise QualityCheckError(f"quality failed for indicator {indicator_id}") from e
 
     try:
         s = time.perf_counter()
