@@ -2,6 +2,9 @@ import os
 import json
 from pathlib import Path
 import pandas as pd
+import logging
+
+logger = logging.getLogger(__name__)
 
 class DataQualityValidator:
     """
@@ -12,7 +15,7 @@ class DataQualityValidator:
         self.report_dir = report_dir
         os.makedirs(self.report_dir, exist_ok=True) # Asegura que el directorio de reportes exista
 
-    
+        self.logger = logger
     def validate(self, df: pd.DataFrame,indicator_name:str, metricas_limpieza:dict) -> dict:
         """
         Valida la calidad de los datos en el DataFrame y genera un reporte de calidad.
@@ -73,4 +76,4 @@ class DataQualityValidator:
         with open(filepath, "w", encoding="utf-8") as f:
             json.dump(reporte, f, ensure_ascii=False, indent=4)
 
-        print(f"Reporte de calidad guardado en: {filepath}")
+        self.logger.info(f"Reporte de calidad guardado en: {filepath}")

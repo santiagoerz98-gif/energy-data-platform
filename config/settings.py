@@ -14,3 +14,7 @@ ESIOS_BACKOFF_FACTOR = 1.0
 ESIOS_CONNECT_TIMEOUT = 5
 ESIOS_READ_TIMEOUT = 30
 ESIOS_RETRY_STATUS_FORCELIST = [429, 500, 502, 503, 504]
+
+LOG_LEVEL = os.getenv("LOG_LEVEL", "INFO")
+LOG_FILE = os.getenv("LOG_FILE", "logs/pipeline.log")
+LOG_FORMAT = "%(asctime)s %(levelname)s %(name)s %(message)s"
