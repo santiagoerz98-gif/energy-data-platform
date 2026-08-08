@@ -1,5 +1,10 @@
-from config.settings import API_KEY, BASE_URL, TIMEOUT
+import logging
+from config.settings import API_KEY, BASE_URL, ESIOS_RETRY_TOTAL, ESIOS_BACKOFF_FACTOR, ESIOS_CONNECT_TIMEOUT, ESIOS_READ_TIMEOUT, ESIOS_RETRY_STATUS_FORCELIST
 import requests
+from requests.adapters import HTTPAdapter
+from urllib3.util.retry import Retry
+
+logger = logging.getLogger(__name__)
 
 class EsiosClient:
     def __init__(self):
@@ -7,15 +12,44 @@ class EsiosClient:
         Raises:
             ValueError: Si la clave de API no está definida.
         """
+        if not API_KEY:
+            raise ValueError("La clave de API de ESIOS no está definida. Por favor, configure la variable de entorno 'ESIOS_API_KEY'.")
+        
         self.base_url = BASE_URL
-        self.timeout = TIMEOUT
+        self.connect_timeout = ESIOS_CONNECT_TIMEOUT
+        self.read_timeout = ESIOS_READ_TIMEOUT
+        self.timeout = (self.connect_timeout, self.read_timeout)
+
         self.headers = {
             "Accept": "application/json; application/vnd.esios-api-v1+json",
             "Content-Type": "application/json",
             "x-api-key": API_KEY
         }
+
         self.session = requests.Session()
         self.session.headers.update(self.headers) # Actualiza los encabezados de la sesión con los encabezados definidos.
+
+        retry = Retry(
+            total=ESIOS_RETRY_TOTAL, # Número total de reintentos permitidos.
+            connect=ESIOS_RETRY_TOTAL, # Número de reintentos permitidos para errores de conexión.
+            read=ESIOS_RETRY_TOTAL, # Número de reintentos permitidos para errores de lectura.
+            status=ESIOS_RETRY_TOTAL, # Número de reintentos permitidos para errores de estado HTTP.
+            backoff_factor=ESIOS_BACKOFF_FACTOR, # Factor de retroceso exponencial para el tiempo de espera entre reintentos.
+            status_forcelist=ESIOS_RETRY_STATUS_FORCELIST, # Lista de códigos de estado HTTP que activan un reintento.
+            allowed_methods=["GET"], # Métodos HTTP permitidos para reintentos.
+            respect_retry_after_header=True, # Indica si se debe respetar el encabezado Retry-After en las respuestas HTTP.
+            raise_on_status=False # Indica si se debe lanzar una excepción para códigos de estado HTTP.
+        )
+
+        self.adapter = HTTPAdapter(
+            max_retries=retry, 
+            pool_connections=10, 
+            pool_maxsize=10, 
+            pool_block=True
+        ) # Configura un adaptador para reintentos de conexión.
+
+        self.session.mount("https://", self.adapter) # Configura la sesión para reintentar hasta 5 veces en caso de fallos de conexión.
+        self.session.mount("http://", self.adapter) # Configura la sesión para reintentar hasta 5 veces en caso de fallos de conexión.
 
     def get(self, endpoint: str, params: dict | None = None) -> dict: 
         """
@@ -35,6 +69,7 @@ class EsiosClient:
         """
         url = f"{self.base_url.rstrip('/')}/{endpoint.lstrip('/')}"
         try:
+            logger.info("ESIOS GET %s params=%s", url, params)
             response = self.session.get(
                 url, 
                 params=params, 
@@ -42,22 +77,34 @@ class EsiosClient:
             )
 
             response.raise_for_status()  # Lanza un error para códigos de estado HTTP
-
-            return response.json()  # Devuelve la respuesta JSON como diccionario
-        except requests.exceptions.Timeout:
+            try:
+                return response.json()  # Devuelve la respuesta JSON como diccionario
+            except ValueError as exc:
+                raise requests.exceptions.RequestException(
+                    f"Error al parsear la respuesta JSON de {url}: {exc}"
+                ) from exc
+            
+        except requests.exceptions.Timeout as exc:
+            logger.warning("Timeout al acceder a %s: %s", url, exc)
             raise requests.exceptions.Timeout(
                 f"La peticion a {url} excedió el tiempo máximo de espera de {self.timeout} segundos."
-            )
+                f"(connect={self.connect_timeout}s, read={self.read_timeout}s)."
+            ) from exc
             
-        except requests.exceptions.HTTPError as e:
+        except requests.exceptions.HTTPError as exc:
+            status_code = getattr(exc.response, 'status_code', None)
+            response_text = getattr(exc.response, 'text', "")
+            logger.warning("Error HTTP %s al acceder a %s: %s", status_code, url, response_text)
+
             raise requests.exceptions.HTTPError(
-                f"Error HTTP {response.status_code} al acceder a {url}: {response.text}"
-            ) from e
+                f"Error HTTP {status_code} al acceder a {url}: {response_text}"
+            ) from exc
             
-        except requests.exceptions.RequestException as e:
+        except requests.exceptions.RequestException as exc:
+            logger.exception("Error al conectar con la API de ESIOS: %s", exc)
             raise requests.exceptions.RequestException(
-                f"Error al conectar con la API de ESIOS: {e}"
-            ) from e
+                f"Error al conectar con la API de ESIOS: {exc}"
+            ) from exc
         
     def get_indicator(
             self,
