@@ -1,29 +1,28 @@
-# Consultas sobre el esquema estrella (Star Schema) para obtener información de la tabla de hechos y sus dimensiones relacionadas.
-from sqlalchemy.orm import Session
-from api.models import FactDemand, DimTime, DimGeography, DimEnergySource, FactGeneration
-from typing import Optional
 from datetime import date
+from typing import Optional
+
+from sqlalchemy.orm import Session
+
+from api import schemas
+from api.models import (
+    DimEnergySource,
+    DimGeography,
+    DimTime,
+    FactDemand,
+    FactGeneration,
+)
+
 
 def get_demand_data(
-        db: Session,
-        *,
-        start_date: Optional[date] = None, 
-        end_date: Optional[date] = None,
-        measurement_type: Optional[str] = None,
-        geo_name: Optional[str] = None
-    ):
-    """
-    Obtiene datos de demanda desde la tabla de hechos fact_demand, 
-    filtrando por fechas, tipo de medición y geografía.
-    """
+    db: Session,
+    *,
+    start_date: Optional[date] = None,
+    end_date: Optional[date] = None,
+    measurement_type: Optional[str] = None,
+    geo_name: Optional[str] = None,
+):
     query = (
-        db.query(
-            FactDemand.demand_mwh,
-            FactDemand.measurement_type,
-            FactDemand.indicator_id,
-            DimTime.datetime_utc,
-            DimGeography.geo_name
-        )
+        db.query(FactDemand, DimTime, DimGeography)
         .join(DimTime, FactDemand.time_key == DimTime.time_key)
         .join(DimGeography, FactDemand.geography_key == DimGeography.geography_key)
     )
@@ -43,39 +42,33 @@ def get_demand_data(
     rows = query.order_by(DimTime.datetime_utc).all()
 
     return [
-        {
-            "datetime_utc": row.datetime_utc.isoformat(),
-            "demand_mwh": float(row.demand_mwh),
-            "measurement_type": row.measurement_type,
-            "indicator_id": row.indicator_id,
-            "geo_name": row.geo_name
-        }
-        for row in rows
+        schemas.DemandData(
+            time=schemas.TimeData.model_validate(time_obj),
+            geography=schemas.GeographyData.model_validate(geo_obj),
+            demand_mwh=float(fact_obj.demand_mwh),
+            measurement_type=fact_obj.measurement_type,
+            indicator_id=fact_obj.indicator_id,
+        )
+        for fact_obj, time_obj, geo_obj in rows
     ]
 
+
 def get_generation_data(
-        db: Session,
-        *, 
-        start_date: Optional[date] = None, 
-        end_date: Optional[date] = None,
-        energy_source_name: Optional[str] = None,
-        geo_name: Optional[str] = None
-    ):
-    """
-    Obtiene datos de generación desde la tabla de hechos fact_generation, 
-    filtrando por fechas, fuente de energía y geografía.
-    """
+    db: Session,
+    *,
+    start_date: Optional[date] = None,
+    end_date: Optional[date] = None,
+    energy_source_name: Optional[str] = None,
+    geo_name: Optional[str] = None,
+):
     query = (
-        db.query(
-            FactGeneration.generation_mwh,
-            FactGeneration.indicator_id,
-            DimTime.datetime_utc,
-            DimGeography.geo_name,
-            DimEnergySource.technology_name
-        )
+        db.query(FactGeneration, DimTime, DimGeography, DimEnergySource)
         .join(DimTime, FactGeneration.time_key == DimTime.time_key)
         .join(DimGeography, FactGeneration.geography_key == DimGeography.geography_key)
-        .join(DimEnergySource, FactGeneration.energy_source_key == DimEnergySource.energy_source_key)
+        .join(
+            DimEnergySource,
+            FactGeneration.energy_source_key == DimEnergySource.energy_source_key,
+        )
     )
 
     if start_date:
@@ -93,15 +86,14 @@ def get_generation_data(
     rows = query.order_by(DimTime.datetime_utc).all()
 
     return [
-        {
-            "datetime_utc": row.datetime_utc.isoformat(),
-            "generation_mwh": float(row.generation_mwh),
-            "indicator_id": row.indicator_id,
-            "geo_name": row.geo_name,
-            "technology_name": row.technology_name
-        }
-        for row in rows
+        schemas.GenerationData(
+            time=schemas.TimeData.model_validate(time_obj),
+            geography=schemas.GeographyData.model_validate(geo_obj),
+            energy_source=schemas.EnergySourceData.model_validate(energy_source_obj),
+            generation_mwh=float(fact_obj.generation_mwh),
+            indicator_id=fact_obj.indicator_id,
+        )
+        for fact_obj, time_obj, geo_obj, energy_source_obj in rows
     ]
 
 
-    
