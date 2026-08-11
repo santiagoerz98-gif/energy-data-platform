@@ -21,10 +21,29 @@ geo_name = st.sidebar.selectbox(
     options=["Península"]
 )
 
-measurement_type = st.sidebar.radio(
+measurement_type = st.sidebar.multiselect(
     "Tipo de Medición",
-    options=["Real", "Forecast", "Scheduled"]
+    options=["Real", "Forecast", "Scheduled"],
+    default=["Real", "Forecast", "Scheduled"]
 )
+
+granularity = st.sidebar.selectbox(
+    "Agrupar por",
+    options=["Hora", "Dia", "Trimestre", "Mes"],
+    index=0 # Set default to "Hora"
+)
+
+agg_func = st.sidebar.selectbox(
+    "Función de Agregación",
+    options=["Promedio", "Suma", "Máximo", "Mínimo"],
+    index=0 # Set default to "Promedio"
+)
+agg_functions = {
+    "Promedio": "mean",
+    "Suma": "sum",
+    "Máximo": "max",
+    "Mínimo": "min"
+}
 
 # today = datetime.date.today()
 # one_week_ago = today - datetime.timedelta(days=7)
@@ -44,9 +63,9 @@ end_date = st.sidebar.date_input(
 @st.cache_data(ttl=300) # Cache the data for 5 minutes
 def fetch_demand_data(
     geo_name:str, 
-    measurement_type:str, 
     start_date:datetime.date, 
-    end_date:datetime.date
+    end_date:datetime.date,
+    measurement_type: str | None = None,
 )->pd.DataFrame:
     """
     Carga los datos de demanda electrica desde la API para la región y tipo de medición especificados, dentro del rango de fechas proporcionado.
@@ -61,14 +80,17 @@ def fetch_demand_data(
         pd.DataFrame: DataFrame con los datos de demanda electrica.
     """
     try:
+        params = {
+            "geo_name": geo_name,
+            "start_date": start_date.isoformat(),
+            "end_date": end_date.isoformat()
+        }
+        if measurement_type:
+            params["measurement_type"] = measurement_type
+            
         response = requests.get(
             url=API_DEMAND_URL,
-            params={
-                "geo_name": geo_name,
-                "measurement_type": measurement_type,
-                "start_date": start_date.isoformat(),
-                "end_date": end_date.isoformat()
-            }
+            params=params
         )
         response.raise_for_status()
         data = response.json()
@@ -82,19 +104,54 @@ def fetch_demand_data(
         return pd.DataFrame()
 
 # Cargar los datos de demanda electrica
-df_demand = fetch_demand_data(
-    geo_name=geo_name,
-    measurement_type=measurement_type,
-    start_date=start_date,
-    end_date=end_date
-)
+frames = []
+for m_type in measurement_type:
+    df_tmp = fetch_demand_data(
+        geo_name=geo_name,
+        start_date=start_date,
+        end_date=end_date,
+        measurement_type=m_type
+    )
+    if not df_tmp.empty:
+        frames.append(df_tmp)
+
+df_demand = pd.concat(frames, ignore_index=True) if frames else pd.DataFrame()
 
 if not df_demand.empty:
     df_demand.rename(columns={"time.datetime_utc": "datetime_utc"}, inplace=True)
     df_demand["datetime_utc"] = pd.to_datetime(df_demand["datetime_utc"], errors="coerce")
-    df_demand = df_demand.dropna(subset=["datetime_utc", "demand_mwh"])
-    df_demand = df_demand.sort_values("datetime_utc")
-    df_demand = df_demand.set_index("datetime_utc")
+    df_demand = df_demand.dropna(subset=["datetime_utc", "demand_mwh", "measurement_type"])
+
+    if granularity == "Hora":
+        df_demand["bucket_time"] = df_demand["datetime_utc"].dt.floor("h")
+    elif granularity == "Dia":
+        df_demand["bucket_time"] = df_demand["datetime_utc"].dt.floor("d")
+    elif granularity == "Mes":
+        df_demand["bucket_time"] = df_demand["datetime_utc"].dt.to_period("M")
+    elif granularity == "Trimestre":
+        # Mes inicial del trimestre: 1, 4, 7, 10
+        q_start_month = (df_demand["time.quarter"] - 1) * 3 + 1
+        df_demand["bucket_time"] = pd.to_datetime(
+            dict(
+                year=df_demand["time.year"],
+                month=q_start_month,
+                day=1,
+            ),
+            errors="coerce",
+            utc=True
+        )
+
+    df_plot = (
+        df_demand
+        .groupby(["bucket_time","measurement_type"], as_index=False)["demand_mwh"]
+        .agg(agg_functions[agg_func])
+        .pivot_table(
+            index="bucket_time",
+            columns="measurement_type",
+            values="demand_mwh"
+        )
+        .sort_index()
+    )
 
     # Fila de métricas clave (KPIs)
     col1, col2, col3 = st.columns(3)
@@ -112,7 +169,7 @@ if not df_demand.empty:
 
     # Grafico de series temporales de demanda electrica
     st.subheader("Demanda Electrica a lo largo del tiempo")
-    st.line_chart(df_demand["demand_mwh"], use_container_width=True)
+    st.line_chart(df_plot, width='stretch')
 
     # Boton para descargar los datos en formato CSV
     csv = df_demand.to_csv(index=False).encode("utf-8")
