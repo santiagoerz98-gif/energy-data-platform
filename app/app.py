@@ -1,115 +1,43 @@
 import streamlit as st
 import pandas as pd
 import requests
-from config.settings import API_DEMAND_URL
+from components.sidebar import render_sidebar
+from components.charts import plot_demand_comparison, plot_current_generation_mix, plot_generation_mix_timeline
+from app_services.data_processor import prepare_demand_plot_df
+from app_services.data_loader import fetch_demand_data, fetch_generation_data
+from config.settings import API_BASE_URL
 import datetime
 
 # Configuracion inicial de la pagina
 st.set_page_config(
-    page_title="Dashboard Demanda Electrica", 
+    page_title="Dashboard Demanda y Generación de la Red Eléctrica Española", 
     page_icon="⚡", 
     layout="wide"
 )
 
-st.title("Dashboard Demanda Electrica")
-st.markdown("Visualizacion de los datos de demanda electrica servidos por la API de ESIOS")
+st.title("Dashboard Demanda y Generación de la Red Eléctrica Española")
+st.markdown("Visualización de los datos de demanda y generación eléctrica en España, incluyendo la evolución de la generación por fuente y la comparación de demanda real, programada y pronosticada. Fuente de datos: [Red Eléctrica de España](https://www.esios.ree.es/es).")
 
-st.sidebar.header("Parametros de consulta")
-
-geo_name = st.sidebar.selectbox(
-    "Selecciona una región",
-    options=["Península"]
-)
-
-measurement_type = st.sidebar.multiselect(
-    "Tipo de Medición",
-    options=["Real", "Forecast", "Scheduled"],
-    default=["Real", "Forecast", "Scheduled"]
-)
-
-granularity = st.sidebar.selectbox(
-    "Agrupar por",
-    options=["Hora", "Dia", "Trimestre", "Mes"],
-    index=0 # Set default to "Hora"
-)
-
-agg_func = st.sidebar.selectbox(
-    "Función de Agregación",
-    options=["Promedio", "Suma", "Máximo", "Mínimo"],
-    index=0 # Set default to "Promedio"
-)
-agg_functions = {
-    "Promedio": "mean",
-    "Suma": "sum",
-    "Máximo": "max",
-    "Mínimo": "min"
-}
+filters = render_sidebar()
 
 # today = datetime.date.today()
 # one_week_ago = today - datetime.timedelta(days=7)
 
-
-
-start_date = st.sidebar.date_input(
-    "Fecha de inicio",
-    value=datetime.date(2026, 7, 1),
+# Cargar los datos de generacion
+df_generation = fetch_generation_data(
+    geo_name=filters["geo_name"],
+    start_date=filters["start_date"],
+    end_date=filters["end_date"]
 )
 
-end_date = st.sidebar.date_input(
-    "Fecha de fin",
-    value=datetime.date(2026, 7, 10)
-)
-
-@st.cache_data(ttl=300) # Cache the data for 5 minutes
-def fetch_demand_data(
-    geo_name:str, 
-    start_date:datetime.date, 
-    end_date:datetime.date,
-    measurement_type: str | None = None,
-)->pd.DataFrame:
-    """
-    Carga los datos de demanda electrica desde la API para la región y tipo de medición especificados, dentro del rango de fechas proporcionado.
-
-    Args:
-        geo_name (str): Región para la cual se desea obtener la demanda.
-        measurement_type (str): Tipo de medición ("Real", "Forecast", "Scheduled").
-        start_date (datetime.date): Fecha de inicio del rango de consulta.
-        end_date (datetime.date): Fecha de fin del rango de consulta.
-
-    Returns:
-        pd.DataFrame: DataFrame con los datos de demanda electrica.
-    """
-    try:
-        params = {
-            "geo_name": geo_name,
-            "start_date": start_date.isoformat(),
-            "end_date": end_date.isoformat()
-        }
-        if measurement_type:
-            params["measurement_type"] = measurement_type
-            
-        response = requests.get(
-            url=API_DEMAND_URL,
-            params=params
-        )
-        response.raise_for_status()
-        data = response.json()
-
-        df = pd.json_normalize(data)
-
-        return df 
-
-    except requests.RequestException as e:
-        st.error(f"Error de conexión con la API: {e}")
-        return pd.DataFrame()
 
 # Cargar los datos de demanda electrica
 frames = []
-for m_type in measurement_type:
+for m_type in filters["measurement_type"]:
     df_tmp = fetch_demand_data(
-        geo_name=geo_name,
-        start_date=start_date,
-        end_date=end_date,
+        geo_name=filters["geo_name"],
+        start_date=filters["start_date"],
+        end_date=filters["end_date"],
         measurement_type=m_type
     )
     if not df_tmp.empty:
@@ -117,68 +45,30 @@ for m_type in measurement_type:
 
 df_demand = pd.concat(frames, ignore_index=True) if frames else pd.DataFrame()
 
-if not df_demand.empty:
-    df_demand.rename(columns={"time.datetime_utc": "datetime_utc"}, inplace=True)
-    df_demand["datetime_utc"] = pd.to_datetime(df_demand["datetime_utc"], errors="coerce")
-    df_demand = df_demand.dropna(subset=["datetime_utc", "demand_mwh", "measurement_type"])
+df_plot = prepare_demand_plot_df(df_demand, filters)
 
-    if granularity == "Hora":
-        df_demand["bucket_time"] = df_demand["datetime_utc"].dt.floor("h")
-    elif granularity == "Dia":
-        df_demand["bucket_time"] = df_demand["datetime_utc"].dt.floor("d")
-    elif granularity == "Mes":
-        df_demand["bucket_time"] = df_demand["datetime_utc"].dt.to_period("M")
-    elif granularity == "Trimestre":
-        # Mes inicial del trimestre: 1, 4, 7, 10
-        q_start_month = (df_demand["time.quarter"] - 1) * 3 + 1
-        df_demand["bucket_time"] = pd.to_datetime(
-            dict(
-                year=df_demand["time.year"],
-                month=q_start_month,
-                day=1,
-            ),
-            errors="coerce",
-            utc=True
-        )
-
-    df_plot = (
-        df_demand
-        .groupby(["bucket_time","measurement_type"], as_index=False)["demand_mwh"]
-        .agg(agg_functions[agg_func])
-        .pivot_table(
-            index="bucket_time",
-            columns="measurement_type",
-            values="demand_mwh"
-        )
-        .sort_index()
-    )
-
-    # Fila de métricas clave (KPIs)
-    col1, col2, col3 = st.columns(3)
-
-    last_record = df_demand["demand_mwh"].iloc[-1]
-    col1.metric("Último valor de Demanda (MWh)", f"{last_record:.2f} MWh")
-
-    avg_demand = df_demand["demand_mwh"].mean()
-    col2.metric("Demanda Promedio (MWh)", f"{avg_demand:.2f} MWh")
-
-    max_demand = df_demand["demand_mwh"].max()
-    col3.metric("Pico Máximo (MWh)", f"{max_demand:.2f} MWh")
-
-    st.divider()
-
+if not df_plot.empty:
     # Grafico de series temporales de demanda electrica
     st.subheader("Demanda Electrica a lo largo del tiempo")
-    st.line_chart(df_plot, width='stretch')
+    fig_demand = plot_demand_comparison(df_plot)
+    st.plotly_chart(fig_demand, width='content')
 
-    # Boton para descargar los datos en formato CSV
-    csv = df_demand.to_csv(index=False).encode("utf-8")
-    st.download_button(
-        label="Descargar datos en CSV",
-        data=csv,
-        file_name='demanda_electrica.csv',
-        mime='text/csv',
-    )
 
 else:
     st.info("No se encontraron datos para los parámetros seleccionados.")
+
+st.divider()
+
+st.subheader("Evolución de la generación eléctrica por fuente")
+fig_generation_mix_timeline = plot_generation_mix_timeline(df_generation)
+st.plotly_chart(fig_generation_mix_timeline, width='content')
+
+col1, col2 = st.columns(2)
+
+with col2:
+    st.write("Renovables vs no renovables (Placeholder)")
+
+with col1:
+    st.subheader("Distribución actual de la generación eléctrica por fuente")
+    fig_current_generation_mix = plot_current_generation_mix(df_generation)
+    st.plotly_chart(fig_current_generation_mix, width='content')
