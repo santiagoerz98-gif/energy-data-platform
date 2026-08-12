@@ -1,9 +1,7 @@
 version: "3.9"
 
 services:
-
   postgres:
-
     image: postgres:17
 
     container_name: energy_dw_postgres
@@ -18,11 +16,18 @@ services:
     ports:
       - "5432:5432"
 
+    deploy:
+      resources:
+        limits:
+          cpus: "1"
+          memory: 512M
+        reservations:
+          memory: 256M
+
     volumes:
       - postgres_data:/var/lib/postgresql/data
       - ./create_dim_time.sql:/docker-entrypoint-initdb.d/1_create_dim_time.sql
       - ./schema.sql:/docker-entrypoint-initdb.d/schema.sql
 
 volumes:
-
   postgres_data:
