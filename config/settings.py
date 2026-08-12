@@ -7,7 +7,7 @@ API_KEY = os.getenv("ESIOS_API_KEY")
 
 BASE_URL = "https://api.esios.ree.es"
 
-API_DEMAND_URL = "http://127.0.0.1:8000/demand"
+API_BASE_URL = "http://127.0.0.1:8000"
 
 TIMEOUT = 30
 
