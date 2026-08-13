@@ -1,12 +1,16 @@
 import streamlit as st
 import pandas as pd
-import requests
 from components.sidebar import render_sidebar
-from components.charts import plot_demand_comparison, plot_current_generation_mix, plot_generation_mix_timeline
+from components.charts import (
+    plot_demand_comparison, 
+    plot_generation_mix, 
+    plot_generation_mix_timeline, 
+    plot_current_renewables_vs_nonrenewables
+)
 from app_services.data_processor import prepare_demand_plot_df
 from app_services.data_loader import fetch_demand_data, fetch_generation_data
 from config.settings import API_BASE_URL
-import datetime
+
 
 # Configuracion inicial de la pagina
 st.set_page_config(
@@ -51,7 +55,7 @@ if not df_plot.empty:
     # Grafico de series temporales de demanda electrica
     st.subheader("Demanda Electrica a lo largo del tiempo")
     fig_demand = plot_demand_comparison(df_plot)
-    st.plotly_chart(fig_demand, width='content')
+    st.plotly_chart(fig_demand, width='stretch')
 
 
 else:
@@ -61,14 +65,16 @@ st.divider()
 
 st.subheader("Evolución de la generación eléctrica por fuente")
 fig_generation_mix_timeline = plot_generation_mix_timeline(df_generation)
-st.plotly_chart(fig_generation_mix_timeline, width='content')
+st.plotly_chart(fig_generation_mix_timeline, width='stretch')
 
 col1, col2 = st.columns(2)
 
 with col2:
-    st.write("Renovables vs no renovables (Placeholder)")
+    st.subheader("Comparacion de la generacion de fuentes renovables vs no renovables")
+    fig_current_renewables_vs_nonrenewables = plot_current_renewables_vs_nonrenewables(df_generation)
+    st.plotly_chart(fig_current_renewables_vs_nonrenewables, width='stretch')
 
 with col1:
-    st.subheader("Distribución actual de la generación eléctrica por fuente")
-    fig_current_generation_mix = plot_current_generation_mix(df_generation)
-    st.plotly_chart(fig_current_generation_mix, width='content')
+    st.subheader("Distribución de la generación eléctrica por fuente")
+    fig_current_generation_mix = plot_generation_mix(df_generation)
+    st.plotly_chart(fig_current_generation_mix, width='stretch')

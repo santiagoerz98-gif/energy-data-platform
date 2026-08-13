@@ -107,14 +107,14 @@ def plot_generation_mix_timeline(df_generation: pd.DataFrame) -> go.Figure:
     return fig
 
 # 2. Mix Energético Instantáneo (Dona)
-def plot_current_generation_mix(df_generation: pd.DataFrame) -> go.Figure:
-    """Genera un gráfico de dona mostrando la distribución instantánea de la generación eléctrica por fuente.
+def plot_generation_mix(df_generation: pd.DataFrame) -> go.Figure:
+    """Genera un gráfico de barras mostrando la distribución de la generación eléctrica por fuente dentro del rango temporal seleccionado.
 
     Args:
         df_generation (pd.DataFrame): Debe contener columnas ['timestamp', "energy_source", "value"] con los datos de generación por fuente.
 
     Returns:
-        go.Figure: Objeto Plotly con la distribución instantánea de la generación por fuente.
+        go.Figure: Objeto Plotly con la distribución dentro del rango temporal seleccionado de la generación por fuente.
     """
 
     if df_generation.empty:
@@ -126,15 +126,66 @@ def plot_current_generation_mix(df_generation: pd.DataFrame) -> go.Figure:
         )
         return fig
 
-    latest_timestamp = df_generation['time.datetime_utc'].max()
-    df_latest = df_generation[df_generation['time.datetime_utc'] == latest_timestamp]
+    df_summary = df_generation.groupby('energy_source.technology_name', as_index=False)['generation_mwh'].sum()
+    df_summary = df_summary.sort_values(by='generation_mwh', ascending=False)
+
+    fig = px.bar(
+        df_summary,
+        x='energy_source.technology_name',
+        y='generation_mwh',
+        title=f"<b>Mix Energético en el período seleccionado</b>",
+        labels={
+            "energy_source.technology_name": "Fuente de Energía",
+            "generation_mwh": "Generación (MWh)",
+        },
+    )
+
+    fig.update_traces(
+        textposition='auto',
+        hovertemplate='%{x}: %{y} MWh'
+    )
+
+    fig.update_layout(showlegend=False, margin=dict(l=20, r=20, t=40, b=20))
+    
+    return fig
+
+# Renovables vs no renovables 
+def plot_current_renewables_vs_nonrenewables(df_generation: pd.DataFrame) -> go.Figure:
+    """Genera un gráfico de dona comparando la generación de fuentes renovables y no renovables.
+
+    Args:
+        df_generation (pd.DataFrame): Debe contener columnas ['time.datetime_utc', "energy_source.renewable", "generation_mwh"] con los datos de generación por fuente.
+        Se utilizará el resumen del rango temporal seleccionado.
+
+    Returns:
+        go.Figure: Objeto Plotly con la comparación de generación renovable vs no renovable.
+    """
+
+    if df_generation.empty:
+        fig = go.Figure()
+        fig.add_annotation(
+            text="No hay datos de generación disponibles para el período seleccionado.", 
+            showarrow=False, 
+            font=dict(size=16)
+        )
+        return fig
+
+    df_generation['type'] = df_generation['energy_source.renewable'].apply(
+        lambda x: 'Renovables' if x else 'No Renovables'
+    )
+
+    df_summary = df_generation.groupby('type', as_index=False)['generation_mwh'].sum()
+
+
 
     fig = px.pie(
-        df_latest,
-        names='energy_source.technology_name',
+        df_summary,
+        names='type',
         values='generation_mwh',
         hole=0.45,
-        title=f"<b>Mix Energético Instantáneo ({latest_timestamp})</b>",
+        color='type',
+        color_discrete_map={'Renovables': "#1EE588", 'No Renovables': '#E53935'},
+        title=f"Comparación de Generación Renovable vs No Renovable"
     )
 
     fig.update_traces(
@@ -143,6 +194,6 @@ def plot_current_generation_mix(df_generation: pd.DataFrame) -> go.Figure:
         hovertemplate='%{label}: %{value} MW (%{percent})'
     )
 
-    fig.update_layout(showlegend=False, margin=dict(l=20, r=20, t=40, b=20))
+    fig.update_layout(showlegend=False, **PLOT_LAYOUT_DEFAULTS)
     
     return fig
