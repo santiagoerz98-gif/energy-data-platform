@@ -315,11 +315,16 @@ BEGIN
     END IF;
 END $$;
 
+-- -----------------------------------------------------
+-- 5) Limpiar staging despues de carga exitosa al Data Warehouse
+-- -----------------------------------------------------
+
+TRUNCATE TABLE staging.demand;
+TRUNCATE TABLE staging.generation;
+
 COMMIT;
 
--- -----------------------------------------------------
--- 5) Consultas de verificación rápida
--- -----------------------------------------------------
+
 -- SELECT COUNT(*) AS dim_geo_rows FROM dw.dim_geography;
 -- SELECT COUNT(*) AS dim_energy_rows FROM dw.dim_energy_source;
 -- SELECT COUNT(*) AS fact_demand_rows FROM dw.fact_demand;
