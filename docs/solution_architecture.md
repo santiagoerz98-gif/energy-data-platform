@@ -110,7 +110,7 @@ Data Warehouse (schema dw)
 
 ## 4.7 Data Warehouse
 
-- Scripts: `database/schema.sql`, `database/create_dim_time.sql`
+- Scripts: `database/schema.sql`
 - Funcion: modelo dimensional analitico en schema `dw`
 
 ## 4.8 API REST (Roadmap)

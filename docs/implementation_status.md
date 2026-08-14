@@ -10,18 +10,18 @@ El nucleo ETL del proyecto esta implementado y operativo. La capa de consumo (AP
 
 ## 2. Estado por componente
 
-| Componente       | Estado       | Evidencia principal            |
-| ---------------- | ------------ | ------------------------------ |
-| Cliente ESIOS    | Implementado | `services/esios_client.py`     |
-| Extract          | Implementado | `pipeline/extract.py`          |
-| Transform        | Implementado | `pipeline/transform.py`        |
-| Quality          | Implementado | `pipeline/quality.py`          |
-| Load a staging   | Implementado | `pipeline/load.py`             |
-| Orquestacion CLI | Implementado | `pipeline/run_pipeline.py`     |
-| Esquema DW       | Implementado | `database/schema.sql`          |
-| Dimension tiempo | Implementado | `database/create_dim_time.sql` |
-| API REST         | Planificado  | `api/` (sin implementacion)    |
-| Dashboard        | Planificado  | `app/` (sin implementacion)    |
+| Componente       | Estado       | Evidencia principal         |
+| ---------------- | ------------ | --------------------------- |
+| Cliente ESIOS    | Implementado | `services/esios_client.py`  |
+| Extract          | Implementado | `pipeline/extract.py`       |
+| Transform        | Implementado | `pipeline/transform.py`     |
+| Quality          | Implementado | `pipeline/quality.py`       |
+| Load a staging   | Implementado | `pipeline/load.py`          |
+| Orquestacion CLI | Implementado | `pipeline/run_pipeline.py`  |
+| Esquema DW       | Implementado | `database/schema.sql`       |
+| Dimension tiempo | Implementado | `database/schema.sql`       |
+| API REST         | Planificado  | `api/` (sin implementacion) |
+| Dashboard        | Planificado  | `app/` (sin implementacion) |
 
 ## 3. Cobertura funcional actual
 

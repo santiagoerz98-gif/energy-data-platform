@@ -1,5 +1,3 @@
-version: "3.9"
-
 services:
   postgres:
     image: postgres:17
@@ -26,8 +24,7 @@ services:
 
     volumes:
       - postgres_data:/var/lib/postgresql/data
-      - ./create_dim_time.sql:/docker-entrypoint-initdb.d/1_create_dim_time.sql
-      - ./schema.sql:/docker-entrypoint-initdb.d/schema.sql
+      - ./database/schema.sql:/docker-entrypoint-initdb.d/schema.sql
 
 volumes:
   postgres_data:

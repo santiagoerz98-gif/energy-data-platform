@@ -85,7 +85,7 @@ Permite realizar análisis temporales sin necesidad de calcular atributos deriva
 | day_name    | VARCHAR(20) | Nombre del dia                                     |
 | is_weekend  | BOOLEAN     | Verdadero si la fecha cae en fin de semana         |
 
-Nota: la definicion fisica y su carga inicial estan en `database/create_dim_time.sql`.
+Nota: la definicion fisica y su carga inicial estan en `database/schema.sql`.
 
 ---
 
@@ -301,7 +301,6 @@ La dimensión tiempo será utilizada por todas las tablas de hechos, permitiendo
 Este documento refleja el esquema actual definido en:
 
 - `database/schema.sql`
-- `database/create_dim_time.sql`
 
 ---
 

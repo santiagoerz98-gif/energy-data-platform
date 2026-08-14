@@ -1,7 +1,5 @@
 import logging
 import pandas as pd
-from pathlib import Path
-
 from sqlalchemy import inspect, text
 
 logger = logging.getLogger(__name__)

@@ -29,8 +29,7 @@ Este documento describe la organizacion del repositorio y la responsabilidad de 
 
 ## `database/`
 
-- `schema.sql`: DDL del esquema `dw` y `staging`.
-- `create_dim_time.sql`: creacion/carga de `dw.dim_time`.
+- `schema.sql`: DDL del esquema `dw` y `staging`, incluye creacion/carga de `dw.dim_time`.
 - `populate_dw.sql`: script de carga analitica desde staging.
 - `docker-compose.yml`: soporte local para PostgreSQL.
 

@@ -55,11 +55,10 @@ DATABASE_URL=postgresql+psycopg://usuario:password@localhost:5432/energy_dw
 Ejecutar scripts SQL en este orden:
 
 1. `database/schema.sql`
-2. `database/create_dim_time.sql`
 
 Opcional para carga analitica desde staging:
 
-3. `database/populate_dw.sql`
+2. `database/populate_dw.sql`
 
 ## Ejecucion del pipeline
 
