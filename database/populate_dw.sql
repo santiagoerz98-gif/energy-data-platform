@@ -179,31 +179,6 @@ END $$;
 -- -----------------------------------------------------
 
 -- 3.1 fact_demand
-WITH demand_src AS (
-    SELECT DISTINCT ON (t.time_key, g.geography_key, s.measurement_type, s.indicator_id)
-        t.time_key,
-        g.geography_key,
-        s.value::numeric(12,3) AS demand_mwh,
-        s.measurement_type,
-        s.indicator_id
-    FROM staging.demand s
-    JOIN dw.dim_time t
-      ON date_trunc('hour', s.datetime_utc::timestamp) = t.datetime_utc
-    JOIN dw.dim_geography g
-      ON s.geo_id = g.geo_id
-    WHERE s.value >= 0
-    ORDER BY
-      t.time_key, g.geography_key, s.measurement_type, s.indicator_id, s.datetime_utc DESC
-),
-deleted AS (
-    DELETE FROM dw.fact_demand f
-    USING demand_src d
-    WHERE f.time_key = d.time_key
-      AND f.geography_key = d.geography_key
-      AND f.measurement_type = d.measurement_type
-      AND f.indicator_id = d.indicator_id
-    RETURNING f.demand_key
-)
 INSERT INTO dw.fact_demand (
     time_key,
     geography_key,
@@ -212,55 +187,44 @@ INSERT INTO dw.fact_demand (
     indicator_id
 )
 SELECT
-    d.time_key,
-    d.geography_key,
-    d.demand_mwh,
-    d.measurement_type,
-    d.indicator_id
-FROM demand_src d;
+    t.time_key,
+    g.geography_key,
+    s.value::numeric(12,3),
+    s.measurement_type,
+    s.indicator_id
+FROM staging.demand s
+JOIN dw.dim_time t
+  ON date_trunc('hour', s.datetime_utc::timestamp) = t.datetime_utc
+JOIN dw.dim_geography g
+  ON s.geo_id = g.geo_id
+WHERE s.value >= 0
+ON CONFLICT (time_key, geography_key, measurement_type, indicator_id)
+DO NOTHING; -- No se actualiza la demanda existente, ya que se asume que es correcta y no se espera que cambie.
 
 -- 3.2 fact_generation
-WITH generation_src AS (
-    SELECT DISTINCT ON (t.time_key, g.geography_key, e.energy_source_key, s.indicator_id)
-        t.time_key,
-        g.geography_key,
-        e.energy_source_key,
-        s.value::numeric(12,3) AS generation_mwh,
-        s.indicator_id
-    FROM staging.generation s
-    JOIN dw.dim_time t
-      ON date_trunc('hour', s.datetime_utc::timestamp) = t.datetime_utc
-    JOIN dw.dim_geography g
-      ON s.geo_id = g.geo_id
-    JOIN dw.dim_energy_source e
-      ON s.short_name = e.technology_name
-    WHERE s.value >= 0
-    ORDER BY
-      t.time_key, g.geography_key, e.energy_source_key, s.indicator_id, s.datetime_utc DESC
-),
-deleted AS (
-    DELETE FROM dw.fact_generation f
-    USING generation_src gsrc
-    WHERE f.time_key = gsrc.time_key
-      AND f.geography_key = gsrc.geography_key
-      AND f.energy_source_key = gsrc.energy_source_key
-      AND f.indicator_id = gsrc.indicator_id
-    RETURNING f.generation_key
-)
 INSERT INTO dw.fact_generation (
     time_key,
     geography_key,
     energy_source_key,
-    generation_mwh,
-    indicator_id
+    indicator_id,
+    generation_mwh
 )
 SELECT
-    gsrc.time_key,
-    gsrc.geography_key,
-    gsrc.energy_source_key,
-    gsrc.generation_mwh,
-    gsrc.indicator_id
-FROM generation_src gsrc;
+    t.time_key,
+    g.geography_key,
+    e.energy_source_key,
+    s.indicator_id,
+    s.value::numeric(12,3)
+FROM staging.generation s
+JOIN dw.dim_time t
+  ON date_trunc('hour', s.datetime_utc::timestamp) = t.datetime_utc
+JOIN dw.dim_geography g
+  ON s.geo_id = g.geo_id
+JOIN dw.dim_energy_source e
+  ON s.short_name = e.technology_name
+WHERE s.value >= 0
+ON CONFLICT (time_key, geography_key, energy_source_key, indicator_id)
+DO NOTHING; -- No se actualiza la generación existente, ya que se asume que es correcta y no se espera que cambie.
 
 -- -----------------------------------------------------
 -- 4) Validaciones post-carga
@@ -325,7 +289,12 @@ TRUNCATE TABLE staging.generation;
 COMMIT;
 
 
+
 -- SELECT COUNT(*) AS dim_geo_rows FROM dw.dim_geography;
 -- SELECT COUNT(*) AS dim_energy_rows FROM dw.dim_energy_source;
--- SELECT COUNT(*) AS fact_demand_rows FROM dw.fact_demand;
--- SELECT COUNT(*) AS fact_generation_rows FROM dw.fact_generation;
+-- SELECT COUNT(*) AS fact_demand_rows FROM dw.fact_demand; --961
+-- SELECT COUNT(*) AS fact_generation_rows FROM dw.fact_generation;--1642
+
+
+
+-- next commit: fix(database): fix populate_dw.sql to enable idempotent load of fact_demand and fact_generation, add validations and constraints
