@@ -41,7 +41,7 @@ def render_sidebar():
         # ---------------------------------------------------------
         geo_name = st.selectbox(
             "Selecciona la región",
-            options=["Península"],
+            options=["Península","España"],
             index=0
         )
 
