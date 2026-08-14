@@ -292,9 +292,5 @@ COMMIT;
 
 -- SELECT COUNT(*) AS dim_geo_rows FROM dw.dim_geography;
 -- SELECT COUNT(*) AS dim_energy_rows FROM dw.dim_energy_source;
--- SELECT COUNT(*) AS fact_demand_rows FROM dw.fact_demand; --961
--- SELECT COUNT(*) AS fact_generation_rows FROM dw.fact_generation;--1642
-
-
-
--- next commit: fix(database): fix populate_dw.sql to enable idempotent load of fact_demand and fact_generation, add validations and constraints
+-- SELECT COUNT(*) AS fact_demand_rows FROM dw.fact_demand;
+-- SELECT COUNT(*) AS fact_generation_rows FROM dw.fact_generation;
