@@ -73,3 +73,4 @@ def render_sidebar():
         "agg_func": agg_functions[agg_func],
         "measurement_type": measurement_type,
     }
+

@@ -104,13 +104,6 @@ INDICATORS = {
         "fact_table": "fact_generation",
         "short_name": "Intercambios",
     },
-    554: {
-        "name": "Generación T.Real enlace balear",
-        "dataset": "generation",
-        "measurement_type": "Real",
-        "fact_table": "fact_generation",
-        "short_name": "Enlace Península-Baleares",
-    },
     555: {
         "name": "Resto generación T.Real",
         "dataset": "generation",
@@ -250,26 +243,5 @@ INDICATORS = {
         "measurement_type": "Real",
         "fact_table": "fact_generation",
         "short_name": "Generación T.Real Turbina de vapor",
-    },
-    10351: {
-        "name": "Generación T.Real renovable",
-        "dataset": "generation",
-        "measurement_type": "Real",
-        "fact_table": "fact_generation",
-        "short_name": "Renovable",
-    },
-    10352: {
-        "name": "Generación T.Real no renovable",
-        "dataset": "generation",
-        "measurement_type": "Real",
-        "fact_table": "fact_generation",
-        "short_name": "No renovable",
-    },
-    10356: {
-        "name": "CO2 Asociado Generación T.Real SNP",
-        "dataset": "generation",
-        "measurement_type": "Real",
-        "fact_table": "fact_generation",
-        "short_name": "CO2 T.Real SNP",
-    },
+    }
 }
