@@ -7,8 +7,9 @@ from pipeline.tasks.populate_dw_task import populate_dw_task
 def energy_pipeline_flow(indicators_ids:list[int], start_date=None, end_date=None, time_trunc=None, geo_ids=None):
     logger = get_run_logger()
     logger.info(f"Starting energy pipeline flow for indicator_ids: {indicators_ids}")
+    
     if start_date is None or end_date is None:
-        start_date = pendulum.now().subtract(days=1).to_date_string() # Por defecto, se establece la fecha de inicio como un día antes de la fecha actual
+        start_date = pendulum.now().subtract(months=1).to_date_string() # Por defecto, se establece la fecha de inicio como un mes antes de la fecha actual
         end_date = pendulum.now().to_date_string() # Por defecto, se establece la fecha de fin como la fecha actual
 
         logger.info(f"Start date: {start_date}, End date: {end_date}")
@@ -47,3 +48,4 @@ if __name__ == "__main__":
         time_trunc=args.time_trunc,
         geo_ids=args.geo_ids
     )
+
