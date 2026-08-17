@@ -65,16 +65,16 @@ st.divider()
 
 st.subheader("Evolución de la generación eléctrica por fuente")
 fig_generation_mix_timeline = plot_generation_mix_timeline(df_generation)
-st.plotly_chart(fig_generation_mix_timeline, width='stretch')
+st.plotly_chart(fig_generation_mix_timeline, width='stretch', key='generation_mix_timeline_chart')
 
 col1, col2 = st.columns(2)
 
 with col2:
     st.subheader("Comparacion de la generacion de fuentes renovables vs no renovables")
     fig_current_renewables_vs_nonrenewables = plot_current_renewables_vs_nonrenewables(df_generation)
-    st.plotly_chart(fig_current_renewables_vs_nonrenewables, width='stretch')
+    st.plotly_chart(fig_current_renewables_vs_nonrenewables, width='stretch', key='renewable_vs_nonrenewable_chart')
 
 with col1:
     st.subheader("Distribución de la generación eléctrica por fuente")
     fig_current_generation_mix = plot_generation_mix(df_generation)
-    st.plotly_chart(fig_current_generation_mix, width='stretch')
+    st.plotly_chart(fig_current_generation_mix, width='stretch', key='generation_mix_chart')
