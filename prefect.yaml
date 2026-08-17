@@ -24,6 +24,43 @@ pull:
 # the deployments section allows you to provide configuration
 # for deploying flows
 deployments:
+  - name: datos-peninsulares
+    tags: [energy, data]
+    description: Procesa los datos de generación y demanda peninsular y los almacena en la base de datos.
+    schedule: {}
+    flow_name: energy-pipeline-flow
+    entrypoint: pipeline/flows/energy_pipeline_flow.py:energy_pipeline_flow
+    parameters:
+      {
+        indicators_ids:
+          [
+            1293,
+            544,
+            545,
+            546,
+            547,
+            548,
+            549,
+            550,
+            551,
+            552,
+            553,
+            555,
+            1294,
+            1295,
+            1296,
+            1297,
+            2344
+          ],
+        start_date: null,
+        end_date: null,
+        time_trunc: null,
+      }
+    work_pool:
+      name: energy-local
+      work_queue_name: default
+      job_variables: {}
+
   - name: demanda-peninsular
     tags: [energy, demand]
     description: Procesa los datos de demanda peninsular y los almacena en la base de datos.
