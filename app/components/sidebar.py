@@ -1,3 +1,4 @@
+import pendulum
 import streamlit as st
 import datetime
 
@@ -23,12 +24,12 @@ def render_sidebar():
         st.subheader("📅 Período de Análisis")
         start_date = st.date_input(
             "Fecha de inicio",
-            value=datetime.date(2026, 7, 1),
+            value=pendulum.now().subtract(months=1).to_date_string(),
         )
 
         end_date = st.date_input(
             "Fecha de fin",
-            value=datetime.date(2026, 7, 10)
+            value=pendulum.now().to_date_string(),
         )
 
         granularity = st.selectbox(

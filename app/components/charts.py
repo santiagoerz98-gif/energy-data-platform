@@ -92,6 +92,7 @@ def plot_generation_mix_timeline(df_generation: pd.DataFrame) -> go.Figure:
             "generation_mwh": "Generación (MWh)",
             "energy_source.technology_name": "Tecnología",
         },
+        key='generation_mix_timeline_chart',
     )
 
     fig.update_traces(
@@ -138,6 +139,8 @@ def plot_generation_mix(df_generation: pd.DataFrame) -> go.Figure:
             "energy_source.technology_name": "Fuente de Energía",
             "generation_mwh": "Generación (MWh)",
         },
+        key='generation_mix_chart',
+        color='energy_source.technology_name',
     )
 
     fig.update_traces(
@@ -185,8 +188,9 @@ def plot_current_renewables_vs_nonrenewables(df_generation: pd.DataFrame) -> go.
         hole=0.45,
         color='type',
         color_discrete_map={'Renovables': "#1EE588", 'No Renovables': '#E53935'},
-        title=f"Comparación de Generación Renovable vs No Renovable"
-    )
+        title=f"Comparación de Generación Renovable vs No Renovable",
+        key='renewable_vs_nonrenewable_chart'
+        )
 
     fig.update_traces(
         textposition='inside', 
